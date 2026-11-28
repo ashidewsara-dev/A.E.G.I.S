@@ -1,6 +1,10 @@
 
+from typing import Literal
+
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.core.orchestrator import generate_response
 
 router = APIRouter(
     prefix="/api/chat",
@@ -9,15 +13,19 @@ router = APIRouter(
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1)
+    mode: Literal["local", "online", "hybrid"] = "hybrid"
 
 
 @router.post("/")
 async def chat(request: ChatRequest):
+
+    result = await generate_response(
+        message=request.message,
+        mode=request.mode
+    )
+
     return {
         "user_message": request.message,
-        "assistant_response": (
-            f"Hello! I received your message: {request.message}"
-        ),
-        "provider": "demo"
+        **result
     }
